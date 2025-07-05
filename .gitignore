@@ -28,3 +28,4 @@ output
 *.json
 justfile
 Makefile
+p5mir
