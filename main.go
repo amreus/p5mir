@@ -105,51 +105,63 @@ func create_project_files(username string, project Project) {
 }
 
 func create_files(file P5File, path string, file_map map[string]P5File) {
-	if file.FileType == "folder" {
-		var newpath string
-		if file.Name == "root" {
-			newpath = strings.Clone(path)
-		} else {
-			newpath = path + "/" + file.Name
-		}
-		//fmt.Printf("creating folder: %s\n", newpath)
-		os.MkdirAll(newpath, 0755)
-		for _, child_id := range file.Children {
-			create_files(file_map[child_id], newpath, file_map)
-		}
-		return
-	} else {
-		filename := path + "/" + file.Name
-		//fmt.Printf("would create file: %s\n", filename)
-		if len(file.Url) == 0 {
-			err := os.WriteFile(filename, []byte(file.Content), 0644)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-		// Download
-		if len(file.Url) > 0 {
-			fmt.Printf("fetching %s\n --> %s\n", file.Url, file.Name)
-			resp, err := http.Get(file.Url)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				fmt.Printf("status: %d\n", resp.StatusCode)
-				return
-			}
-			out, err := os.Create(filename)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer out.Close()
+	switch file.FileType {
+	case "folder":
+		create_folder(file, path, file_map)
+	default:
+		create_file(file, path)
+	}
+}
 
-			_, err = io.Copy(out, resp.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
+func create_folder(folder P5File, parentPath string, file_map map[string]P5File) {
+	var folderPath string
+	if folder.Name == "root" {
+		folderPath = parentPath
+	} else {
+		folderPath = parentPath + "/" + folder.Name
+	}
+	os.MkdirAll(folderPath, 0755)
+	for _, childID := range folder.Children {
+		create_files(file_map[childID], folderPath, file_map)
+	}
+}
+
+func create_file(file P5File, path string) {
+	filename := path + "/" + file.Name
+	if file.Url == "" {
+		write_content_to_file(filename, file.Content)
+	} else {
+		download_file(file.Url, filename, file.Name)
+	}
+}
+
+func write_content_to_file(filename, content string) {
+	err := os.WriteFile(filename, []byte(content), 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func download_file(url, filename, displayName string) {
+	fmt.Printf("fetching %s\n --> %s\n", url, displayName)
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("status: %d\n", resp.StatusCode)
+		return
+	}
+	out, err := os.Create(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
