@@ -34,31 +34,28 @@ type Project struct {
 }
 
 func fetch_user_json(username string) []byte {
-
 	url := fmt.Sprintf("https://editor.p5js.org/editor/%s/projects", username)
 
 	res, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("HTTP request failed: %v", err)
 	}
-	body, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		log.Fatal(err)
-	}
-	//fmt.Printf("StatusCode: %d\n", res.StatusCode)
+	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		fmt.Printf("%s\n", body)
-		log.Fatal(res.StatusCode)
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Fatalf("Reading response body failed: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		log.Fatalf("Unexpected status code %d: %s", res.StatusCode, string(body))
 	}
 
 	filename := fmt.Sprintf("%s.json", username)
-	//fmt.Printf("%s", body)
-	err = os.WriteFile(filename, body, 0644)
-	if err != nil {
-		log.Fatal(err)
+	if err := os.WriteFile(filename, body, 0644); err != nil {
+		log.Fatalf("Writing file failed: %v", err)
 	}
+
 	return body
 }
 
