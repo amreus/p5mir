@@ -178,6 +178,11 @@ var (
 
 func main() {
 
+	if len(os.Args) != 2 {
+		fmt.Printf("Usage: %s <username>\n", os.Args[0])
+		os.Exit(1)
+	}
+
 	username := os.Args[1]
 
 	var (
