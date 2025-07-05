@@ -63,22 +63,11 @@ func fetch_user_json(username string) []byte {
 }
 
 func create_file_map(project Project) map[string]P5File {
-	var m map[string]P5File
-	m = make(map[string]P5File)
+	m := make(map[string]P5File)
 	for _, file := range project.Files {
 		m[file.Id] = file
 	}
 	return m
-}
-
-func get_file(project Project, fileid string) P5File {
-	var f P5File
-	for _, file := range project.Files {
-		if file.Id == fileid {
-			f = file
-		}
-	}
-	return f
 }
 
 func get_root(proj Project) P5File {
